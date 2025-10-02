@@ -1,128 +1,125 @@
-# Go Chat App
+# Go Chat (Structured Go Project)
 
-A simple **real-time chat application** built with **Go** and [Gorilla WebSocket](https://github.com/gorilla/websocket) for the backend and a lightweight **HTML/JS frontend**.
+A real-time **chat application** built with **Go** and [Gorilla WebSocket](https://github.com/gorilla/websocket).
+This version is structured for **scalability** and **maintainability** using a layered architecture.
 
 ---
 
 ## Features
 
-* Real-time chat using WebSockets
-* User joins/leaves are broadcast as system messages
-* Supports **bold**, *italic*, and `inline code` markdown
-* Preserves **multiline messages** with line breaks
-* Auto-scroll to newest messages
-* Simple and responsive UI
+* Real-time chat with WebSockets
+* User join/leave notifications
+* Markdown support (`**bold**`, `*italic*`, `` `code` ``)
+* Multiline messages (Shift+Enter for new line)
+* Clean project structure (`internal/`, `pkg/`, `cmd/`)
+* Custom logger
 
 ---
 
 ## Project Structure
 
 ```
-.
-├── main.go              # Go server (WebSocket + HTTP handler)
-├── Dockerfile           # Docker build file
-├── docker-compose.yml   # Compose for running/scaling easily
-└── static/
-    └── index.html       # Chat frontend 
+go-chat/
+├── cmd/
+│   └── server/
+│       └── main.go       # Entry point
+│
+├── internal/
+│   ├── app/
+│   │   └── app.go        # Wire dependencies + run server
+│   ├── config/           # (future) env/config loader
+│   ├── handlers/
+│   │   └── chat.go       # WebSocket handler
+│   ├── models/
+│   │   └── message.go    # Data models
+│   ├── services/
+│   │   └── chat_service.go
+│   └── store/
+│       └── memory_store.go
+│
+├── pkg/
+│   └── logger/
+│       └── logger.go     # Custom logger wrapper
+│
+├── static/
+│   └── index.html        # Frontend chat UI
+│
+├── Dockerfile
+├── docker-compose.yml
+├── go.mod
+└── README.md
 ```
 
 ---
 
 ## Requirements
 
-* [Go 1.18+](https://go.dev/dl/)
+* Go 1.18+
 * Gorilla WebSocket package
-* Docker & Docker Compose (optional)
 
-Install Gorilla WebSocket:
+Install dependencies:
 
 ```bash
-go get github.com/gorilla/websocket
+go mod tidy
 ```
 
 ---
 
-## Running Locally (without Docker)
+## Running Locally
 
-1. Clone this repository:
+Start the app:
 
-    ```bash
-    git clone https://github.com/yourusername/go-chat.git
-    cd go-chat
-    ```
+```bash
+go run ./cmd/server
+```
 
-2. Run the server:
+Visit in your browser:
 
-    ```bash
-    go run main.go
-    ```
-
-3. Open the app in your browser:
-
-    ```
-    http://localhost:8080
-    ```
+```
+http://localhost:8080
+```
 
 ---
 
 ## Running with Docker
 
-1. Build the Docker image:
+1. Build the image:
 
-    ```bash
-    docker build -t go-chat .
-    ```
+```bash
+docker build -t go-chat .
+```
 
 2. Run the container:
 
-    ```bash
-    docker run -p 8080:8080 go-chat
-    ```
+```bash
+docker run -p 8080:8080 go-chat
+```
 
-3. Open the app:
+Open in browser:
 
-    ```
-    http://localhost:8080
-    ```
+```
+http://localhost:8080
+```
 
 ---
 
 ## Running with Docker Compose
 
-1. Start the service:
+```bash
+docker compose up --build
+```
 
-    ```bash
-    docker compose up --build
-    ```
+To scale:
 
-2. Open the app:
+```bash
+docker compose up --scale go-chat=3
+```
 
-    ```
-    http://localhost:8080
-    ```
-
-3. To scale multiple instances (requires sticky sessions in a reverse proxy for WebSockets):
-
-    ```bash
-    docker compose up --scale go-chat=3
-    ```
-
----
-
-## Usage
-
-* On page load, enter your **name**.
-* Type messages in the input box and press **Enter** to send.
-* Use **Shift+Enter** to create a new line.
-* Basic Markdown supported:
-
-  * `**bold**` → **bold**
-  * `*italic*` → *italic*
-  * `` `code` `` → `code`
+*(requires sticky sessions for WebSockets when load balancing)*
 
 ---
 
 ## License
 
 MIT License.
-You are free to use and modify this project.
+Free to use, modify, and distribute.

@@ -1,27 +1,31 @@
-# Use the official Go image as a build stage
+# Build stage
 FROM golang:1.22 AS builder
 
 WORKDIR /app
 
-# Copy go module files and download deps
-COPY go.mod ./
+# Copy go.mod and go.sum and download deps
+COPY go.mod go.sum ./
 RUN go mod tidy
 
-# Copy the source
+# Copy the entire project
 COPY . .
 
-# Build the Go app
-RUN go build -o server main.go
+# Build the Go server from cmd/server
+RUN go build -o server ./cmd/server
 
 # Runtime stage
 FROM debian:bullseye-slim
 
 WORKDIR /app
 
-# Copy the built server and static files
+# Copy the built binary
 COPY --from=builder /app/server .
+
+# Copy static files
 COPY --from=builder /app/static ./static
 
+# Expose default port 8080
 EXPOSE 8080
 
+# Run the server
 CMD ["./server"]
