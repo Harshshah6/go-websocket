@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
 	"github.com/harshshah6/go-websocket/internal/models"
 	"github.com/harshshah6/go-websocket/internal/services"
+	"github.com/harshshah6/go-websocket/pkg/logger"
 )
 
 type ChatHandler struct {
@@ -15,6 +15,7 @@ type ChatHandler struct {
 	Broadcast chan models.Message
 	Upgrader  websocket.Upgrader
 	Service   *services.ChatService
+	Logger    *logger.Logger
 }
 
 func NewChatHandler() *ChatHandler {
@@ -25,13 +26,14 @@ func NewChatHandler() *ChatHandler {
 			CheckOrigin: func(r *http.Request) bool { return true },
 		},
 		Service: &services.ChatService{},
+		Logger: logger.New("[CHAT]"),
 	}
 }
 
 func (h *ChatHandler) HandleConnections(w http.ResponseWriter, r *http.Request) {
 	ws, err := h.Upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("WebSocket upgrade error:", err)
+		h.Logger.Fatal("WebSocket upgrade error:", err)
 		return
 	}
 	defer ws.Close()
@@ -66,6 +68,7 @@ func (h *ChatHandler) HandleMessages() {
 		data, _ := json.Marshal(msg)
 		for client := range h.Clients {
 			err := client.WriteMessage(websocket.TextMessage, data)
+			h.Logger.Logger.Println(string(data))
 			if err != nil {
 				client.Close()
 				delete(h.Clients, client)

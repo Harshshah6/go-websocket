@@ -16,8 +16,7 @@ type App struct {
 
 // NewApp initializes the application
 func NewApp() *App {
-	appLogger := logger.New("[CHAT]")
-
+	appLogger := logger.New("[APP]")
 	handler := handlers.NewChatHandler()
 
 	return &App{
