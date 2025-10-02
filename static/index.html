@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Go Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 1rem;
+            background: #f4f6f9;
+        }
+
+        #chat {
+            max-width: 650px;
+            margin: auto;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+        }
+
+        #chat h2 {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        #messages {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #fafafa;
+        }
+
+        #messages li {
+            margin: 6px 12px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            line-height: 1.4;
+        }
+
+        #messages li:nth-child(odd) {
+            background: #fefefe;
+        }
+
+        .system {
+            color: gray;
+            font-style: italic;
+            text-align: center;
+            background: none !important;
+        }
+
+        .timestamp {
+            font-size: 0.75em;
+            color: #999;
+            margin-left: 8px;
+        }
+
+        #inputArea {
+            display: flex;
+            margin-top: 1rem;
+        }
+
+        #msg {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1rem;
+            resize: none;
+        }
+
+        #send {
+            margin-left: 8px;
+            padding: 10px 18px;
+            background: #1976d2;
+            border: none;
+            color: #fff;
+            font-size: 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        #send:hover {
+            background: #1565c0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="chat">
+        <h2>Go Chat</h2>
+        <ul id="messages"></ul>
+        <div id="inputArea">
+            <textarea id="msg" placeholder="Enter message..."></textarea>
+            <button id="send">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const name = prompt("Enter your name:") || "Anonymous";
+        const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+        const ws = new WebSocket(`${protocol}://${location.host}/ws`);
+        const msgInput = document.getElementById("msg");
+        const sendBtn = document.getElementById("send");
+        const messagesList = document.getElementById("messages");
+
+        // Markdown sanitizer (only allow **bold**, *italic*, `code`)
+        function renderMarkdown(text) {
+            let safe = text
+                .replace(/</g, "&lt;") // escape HTML
+                .replace(/>/g, "&gt;");
+            safe = safe.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>"); // bold
+            safe = safe.replace(/\*(.*?)\*/g, "<em>$1</em>");             // italic
+            safe = safe.replace(/`(.*?)`/g, "<code>$1</code>");           // inline code
+            safe = safe.replace(/\n/g, "<br>");                           // new line
+            return safe;
+        }
+
+        ws.onopen = () => {
+            ws.send(name); // Send name as first message
+        };
+
+        ws.onmessage = (event) => {
+            const { name, message, timestamp, system } = JSON.parse(event.data);
+            const item = document.createElement("li");
+
+            if (system) {
+                item.className = "system";
+                item.textContent = `${name} ${message}`;
+            } else {
+                const safeMessage = renderMarkdown(message);
+                item.innerHTML = `<span style="color:#1976d2;font-weight:bold;">${name}</span>: ${safeMessage}`;
+            }
+
+            messagesList.appendChild(item);
+            messagesList.scrollTop = messagesList.scrollHeight;
+        };
+
+        sendBtn.onclick = () => {
+            const message = msgInput.value.trim();
+            if (message) {
+                ws.send(JSON.stringify({ message }));
+                msgInput.value = "";
+            }
+        };
+
+        msgInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendBtn.click();
+            }
+        });
+    </script>
+</body>
+
+</html>
